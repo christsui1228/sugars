@@ -22,7 +22,7 @@ print("🔧 步骤 1: 测试配置加载")
 print("=" * 70)
 
 try:
-    from .core.config import settings
+    from sugars.core.config import settings
 
     print("✅ 配置模块导入成功")
     print(f"   环境: {settings.env.value}")
@@ -44,7 +44,7 @@ print("🔌 步骤 2: 测试同步数据库连接")
 print("=" * 70)
 
 try:
-    from .core.database_sync import engine, SessionFactory
+    from sugars.core.database_sync import engine, SessionFactory
 
     print("✅ 同步数据库模块导入成功")
     print(f"   连接 URL: {settings.database.sync_url}")

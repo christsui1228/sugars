@@ -15,15 +15,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # 导入配置
-from {{ project_slug }}.core.config import settings
+from sugars.core.config import settings
 
 # 导入 SQLModel 和所有模型
 from sqlmodel import SQLModel
 
 # 导入所有模型以确保它们被注册到 metadata
-from {{ project_slug }}.features.demo.models import DemoItem  # noqa: F401
+from sugars.models import MarketDaily  # noqa: F401
 # 在这里导入其他模型...
-# from {{ project_slug }}.features.other.models import OtherModel  # noqa: F401
+# from sugars.features.other.models import OtherModel  # noqa: F401
 
 # Alembic Config 对象
 config = context.config
