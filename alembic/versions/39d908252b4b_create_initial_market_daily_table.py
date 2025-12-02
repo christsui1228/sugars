@@ -1,8 +1,8 @@
 """create initial market_daily table
 
-Revision ID: 101306015567
+Revision ID: 39d908252b4b
 Revises: 
-Create Date: 2025-12-02 11:39:26.344439
+Create Date: 2025-12-02 17:33:46.792412
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '101306015567'
+revision: str = '39d908252b4b'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
