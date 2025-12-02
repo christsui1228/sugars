@@ -30,6 +30,9 @@ dependencies = [
     
     # 日志
     "loguru>=0.7.3",
+    "akshare>=1.17.91",
+    "polars>=1.35.2",
+    "pyarrow>=22.0.0",
 ]
 requires-python = ">=3.12"
 readme = "README.md"
@@ -148,6 +151,8 @@ db-current = "alembic current"
 
 # 测试
 test = "pytest -q"
+test-db-sync = {cmd = "python sugars/scripts/test_db_connection_sync.py", env = {PYTHONPATH = "."}}
+test-db-async = {cmd = "python sugars/scripts/test_db_connection_async.py", env = {PYTHONPATH = "."}}
 test-cov = "pytest --cov=sugars --cov-report=html --cov-report=term"
 test-verbose = "pytest -v"
 

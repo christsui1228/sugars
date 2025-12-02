@@ -23,7 +23,7 @@ print("🔧 步骤 1: 测试配置加载")
 print("=" * 70)
 
 try:
-    from .core.config import settings
+    from sugars.core.config import settings
 
     print("✅ 配置模块导入成功")
     print(f"   环境: {settings.env.value}")
@@ -49,7 +49,7 @@ async def test_async_database():
     print("=" * 70)
 
     try:
-        from .core.database_async import async_engine, AsyncSessionFactory
+        from sugars.core.database_async import async_engine, AsyncSessionFactory
 
         print("✅ 异步数据库模块导入成功")
         print(f"   连接 URL: {settings.database.async_url}")
