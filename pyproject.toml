@@ -1,0 +1,161 @@
+[project]
+name = "sugars"
+version = "0.1.0"
+description = "FastAPI project with SQLModel, Alembic, and async PostgreSQL support"
+authors = [
+    {name = "christsui", email = "christsui1228@gmail.com"},
+]
+dependencies = [
+    # Web 框架
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "python-multipart>=0.0.20",
+    
+    # 认证和安全
+    "python-jose[cryptography]>=3.4.0",
+    "passlib[bcrypt]>=1.7.4",
+    "bcrypt==3.2.0",
+    
+    # 数据库
+    "sqlalchemy>=2.0.38",
+    "sqlmodel>=0.0.24",
+    "asyncpg>=0.30.0",
+    "psycopg2-binary>=2.9.10",
+    "alembic>=1.16.1",
+    
+    # 配置管理
+    "pydantic[email]>=2.11.0",
+    "pydantic-settings>=2.9.0",
+    "typing-extensions>=4.8.0",
+    
+    # 日志
+    "loguru>=0.7.3",
+]
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "MIT"}
+
+[project.optional-dependencies]
+dev = [
+    # 开发工具
+    "pytest>=8.3.0",
+    "pytest-cov>=6.0.0",
+    "pytest-asyncio>=0.24.0",
+    "black>=23.9.0",
+    "isort>=5.12.0",
+    "mypy>=1.5.0",
+    "ipython>=8.16.0",
+    "ipdb>=0.13.13",
+]
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest>=8.3.0",
+    "pytest-cov>=6.0.0",
+    "pytest-asyncio>=0.24.0",
+]
+lint = [
+    "black>=23.9.0",
+    "isort>=5.12.0",
+    "mypy>=1.5.0",
+]
+dev = [
+    "ipython>=8.16.0",
+    "ipdb>=0.13.13",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.mypy_cache
+  | \.pytest_cache
+  | __pycache__
+  | alembic/versions
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+skip_glob = ["*/alembic/versions/*"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "sqlalchemy.*",
+    "alembic.*",
+    "fastapi.*",
+    "pydantic.*",
+    "sqlmodel.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers"
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["sugars"]
+omit = [
+    "*/tests/*",
+    "*/alembic/*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.pdm.scripts]
+# 启动开发服务器
+serve = "uvicorn sugars.main:app --reload --host 0.0.0.0 --port 8000"
+dev = "uvicorn sugars.main:app --reload"
+
+# 数据库迁移
+db-init = "alembic upgrade head"
+db-migrate = "alembic revision --autogenerate"
+db-upgrade = "alembic upgrade head"
+db-downgrade = "alembic downgrade -1"
+db-history = "alembic history"
+db-current = "alembic current"
+
+# 测试
+test = "pytest -q"
+test-cov = "pytest --cov=sugars --cov-report=html --cov-report=term"
+test-verbose = "pytest -v"
+
+# 代码质量
+fmt = "isort . && black ."
+lint = "mypy sugars"
+check = "isort --check-only . && black --check ."
+
+# 工具
+shell = "ipython"
+clean = "find . -type d -name __pycache__ -exec rm -rf {} + && find . -type f -name '*.pyc' -delete"

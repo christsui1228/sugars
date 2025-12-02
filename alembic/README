@@ -1,0 +1,59 @@
+# Alembic 数据库迁移
+
+此目录包含使用 Alembic 进行数据库迁移的配置和脚本。
+
+## 常用命令
+
+### 创建新的迁移
+```bash
+pdm run alembic revision --autogenerate -m "描述你的更改"
+```
+
+### 应用迁移
+```bash
+# 升级到最新版本
+pdm run alembic upgrade head
+
+# 升级一个版本
+pdm run alembic upgrade +1
+
+# 升级到特定版本
+pdm run alembic upgrade <revision_id>
+```
+
+### 回滚迁移
+```bash
+# 回滚一个版本
+pdm run alembic downgrade -1
+
+# 回滚到特定版本
+pdm run alembic downgrade <revision_id>
+
+# 回滚所有迁移
+pdm run alembic downgrade base
+```
+
+### 查看迁移历史
+```bash
+# 查看当前版本
+pdm run alembic current
+
+# 查看迁移历史
+pdm run alembic history
+
+# 查看详细历史
+pdm run alembic history --verbose
+```
+
+## 目录结构
+
+- `env.py` - 迁移环境配置，包含数据库连接和 SQLModel 支持
+- `script.py.mako` - 迁移脚本模板
+- `versions/` - 存放所有迁移文件的目录
+
+## 注意事项
+
+1. 每次修改模型后，记得创建新的迁移
+2. 在应用迁移前，建议先备份数据库
+3. 迁移文件应该纳入版本控制
+4. 新增模型时，需要在 `env.py` 中导入该模型

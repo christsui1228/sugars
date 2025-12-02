@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "chris"
+      POSTGRES_PASSWORD: "changeme123"
+      POSTGRES_DB: "sugars_db"
+    ports:
+      - "5432:5432"
+    volumes:
+      # 命名卷: [卷名]:[容器内路径] (用于持久化数据)
+      - "pg_data:/var/lib/postgresql"
+
+# 顶层 volumes 用于声明 '命名卷'
+volumes:
+  pg_data:
