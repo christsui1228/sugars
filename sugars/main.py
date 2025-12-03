@@ -42,7 +42,7 @@ app.add_middleware(
 )
 
 # --- 4. 注册路由 ---
-app.include_router(market.router)
+app.include_router(market.router, prefix="/api")
 
 
 # --- 5. 健康检查 ---
