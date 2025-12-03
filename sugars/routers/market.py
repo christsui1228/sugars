@@ -1,4 +1,5 @@
 """市场数据路由 - 提供白糖市场数据查询接口"""
+
 from __future__ import annotations
 
 from datetime import date
@@ -19,30 +20,15 @@ def list_daily_data(
 ):
     """获取市场日数据列表，支持日期范围过滤"""
     query = select(MarketDaily).order_by(MarketDaily.record_date.desc())
-    
+
     if start_date:
         query = query.where(MarketDaily.record_date >= start_date)
     if end_date:
         query = query.where(MarketDaily.record_date <= end_date)
-    
+
     query = query.limit(limit)
     results = db.exec(query).all()
     return results
-
-
-@router.get("/daily/{record_date}", response_model=MarketDailyRead, summary="查询指定日期数据")
-def get_daily_data(
-    record_date: date,
-    db: Session = Depends(get_db),
-):
-    """获取指定日期的市场数据"""
-    item = db.get(MarketDaily, record_date)
-    if item is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"未找到日期 {record_date} 的数据"
-        )
-    return item
 
 
 @router.get("/daily/latest", response_model=MarketDailyRead, summary="获取最新数据")
@@ -52,7 +38,23 @@ def get_latest_data(db: Session = Depends(get_db)):
     result = db.exec(query).first()
     if result is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="暂无市场数据"
+            status_code=status.HTTP_404_NOT_FOUND, detail="暂无市场数据"
         )
     return result
+
+
+@router.get(
+    "/daily/{record_date}", response_model=MarketDailyRead, summary="查询指定日期数据"
+)
+def get_daily_data(
+    record_date: date,
+    db: Session = Depends(get_db),
+):
+    """获取指定日期的市场数据"""
+    item = db.get(MarketDaily, record_date)
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"未找到日期 {record_date} 的数据",
+        )
+    return item
