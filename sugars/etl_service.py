@@ -18,20 +18,18 @@ def fetch_and_store_data():
         print("   -> 正在抓取白糖期货 (SR0)...")
         df_sugar_raw = ak.futures_zh_daily_sina(symbol="SR0")
 
-        # B. 汇率 (为了 MVP 稳定，获取最近历史数据)
+        # B. 汇率 (使用中国银行安全接口)
         print("   -> 正在抓取美元/人民币汇率...")
-        # 注意：这里我们取最近 60 天，确保能覆盖到白糖的交易日
-        start_date_str = (date.today() - timedelta(days=60)).strftime("%Y%m%d")
         try:
-            # 尝试获取中行历史数据
-            df_fx_raw = ak.currency_boc_sina(
-                symbol="美元",
-                start_date=start_date_str,
-                end_date=date.today().strftime("%Y%m%d"),
-            )
+            df_fx_raw = ak.currency_boc_safe()
+            # 只保留日期和美元列，重命名为标准格式
+            df_fx_raw = df_fx_raw[["日期", "美元"]].copy()
+            df_fx_raw.columns = ["日期", "中行汇买价"]
+            # 汇率需要除以 100（707.89 -> 7.0789）
+            df_fx_raw["中行汇买价"] = df_fx_raw["中行汇买价"] / 100
         except Exception as e:
             # 降级策略：使用固定汇率
-            print(f"      ⚠️ 汇率接口失败，使用固定汇率 7.0")
+            print(f"      ⚠️ 汇率接口失败 ({e})，使用固定汇率 7.0")
             current_rate = 7.0
             dates = [date.today() - timedelta(days=i) for i in range(60)]
             df_fx_raw = pl.DataFrame(
