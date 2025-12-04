@@ -48,10 +48,11 @@ def fetch_and_store_data():
     # --- 2. 数据清洗 (Transform with Polars) ---
     print("   -> 正在使用 Polars 清洗数据...")
     try:
-        # A. 清洗白糖
+        # A. 清洗白糖（只保留最近2年数据）
         q_sugar = (
             pl.from_pandas(df_sugar_raw)
             .with_columns(pl.col("date").cast(pl.Date))
+            .filter(pl.col("date") >= (date.today() - timedelta(days=730)))
             .select(
                 [
                     pl.col("date").alias("record_date"),
@@ -81,6 +82,7 @@ def fetch_and_store_data():
                 pl.when(pl.col("usd_cny_rate") > 50)
                 .then(pl.col("usd_cny_rate") / 100)
                 .otherwise(pl.col("usd_cny_rate"))
+                .round(4)
                 .alias("usd_cny_rate")
             )
         )
@@ -98,20 +100,19 @@ def fetch_and_store_data():
         )
 
         # D. 核心合并 (Join) & 计算
-        # 以白糖交易日为主表 (Left Join)
+        # 以白糖交易日为主表 (Left Join) - 只保留白糖有数据的日期
         df_final = (
             q_sugar.join(q_fx, on="record_date", how="left")
             .join(q_bdi, on="record_date", how="left")
             .sort("record_date")
-            # 填充空值 (Forward Fill: 周末汇率/BDI 不更新，沿用周五的)
+            # 填充空值 (Forward Fill: 周末汇率/BDI 不更新，沿用最近的交易日数据)
             .with_columns(
                 [
                     pl.col("usd_cny_rate").forward_fill(),
                     pl.col("bdi_index").forward_fill(),
                 ]
             )
-            # 只取最近 365 天的数据入库
-            .filter(pl.col("record_date") >= (date.today() - timedelta(days=365)))
+            # 不再过滤日期范围，保留所有白糖有数据的交易日
         )
 
         # E. 计算估算进口成本
@@ -134,30 +135,27 @@ def fetch_and_store_data():
     records = df_final.to_dicts()
     print(f"   -> 准备写入 {len(records)} 条记录到数据库...")
 
+    from sqlalchemy.dialects.postgresql import insert
+    
     with Session(engine) as session:
-        count_new = 0
-        count_update = 0
-        for row in records:
-            # 检查当日数据是否存在 (Upsert 逻辑)
-            existing = session.get(MarketDaily, row["record_date"])
-            if existing:
-                # 更新
-                existing.sugar_close = row["sugar_close"]
-                existing.sugar_open = row["sugar_open"]
-                existing.usd_cny_rate = row["usd_cny_rate"]
-                existing.bdi_index = row["bdi_index"]
-                existing.import_cost_estimate = row["import_cost_estimate"]
-                existing.updated_at = datetime.now()
-                session.add(existing)
-                count_update += 1
-            else:
-                # 插入
-                session.add(MarketDaily(**row))
-                count_new += 1
+        # 批量 UPSERT（PostgreSQL ON CONFLICT）
+        stmt = insert(MarketDaily.__table__).values(records)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=['record_date'],
+            set_={
+                'sugar_close': stmt.excluded.sugar_close,
+                'sugar_open': stmt.excluded.sugar_open,
+                'usd_cny_rate': stmt.excluded.usd_cny_rate,
+                'bdi_index': stmt.excluded.bdi_index,
+                'import_cost_estimate': stmt.excluded.import_cost_estimate,
+                'updated_at': datetime.now()
+            }
+        )
+        result = session.execute(stmt)
         session.commit()
 
-    print(f"🎉 ETL 完成! 新增: {count_new}, 更新: {count_update}")
-    return {"status": "success", "new": count_new, "updated": count_update}
+    print(f"🎉 ETL 完成! 处理 {len(records)} 条记录")
+    return {"status": "success", "records": len(records)}
 
 
 if __name__ == "__main__":

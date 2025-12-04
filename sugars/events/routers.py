@@ -1,6 +1,6 @@
 """ETL 管理接口"""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from loguru import logger
 
 from ..etl_service import fetch_and_store_data
@@ -10,19 +10,11 @@ router = APIRouter(prefix="/etl", tags=["ETL 管理"])
 
 
 @router.post("/trigger", summary="手动触发 ETL 任务")
-def trigger_etl():
-    """立即执行一次 ETL 数据抓取"""
-    try:
-        logger.info("🔧 手动触发 ETL 任务...")
-        result = fetch_and_store_data()
-        return {
-            "status": "success",
-            "message": "ETL 执行完成",
-            "result": result,
-        }
-    except Exception as e:
-        logger.error(f"❌ ETL 执行失败: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+def trigger_etl(background_tasks: BackgroundTasks):
+    """立即执行一次 ETL 数据抓取（后台异步执行）"""
+    logger.info("🔧 手动触发 ETL 任务（后台执行）...")
+    background_tasks.add_task(fetch_and_store_data)
+    return {"status": "accepted", "message": "ETL 任务已提交到后台执行"}
 
 
 @router.get("/status", summary="查看定时任务状态")
