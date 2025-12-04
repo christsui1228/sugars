@@ -2,8 +2,8 @@ import akshare as ak
 import polars as pl
 from datetime import date, timedelta, datetime
 from sqlmodel import Session, select
-from core.database_sync import engine
-from models import MarketDaily
+from .core.database_sync import engine
+from .models import MarketDaily
 
 
 def fetch_and_store_data():
@@ -29,11 +29,10 @@ def fetch_and_store_data():
                 start_date=start_date_str,
                 end_date=date.today().strftime("%Y%m%d"),
             )
-        except:
-            # 降级策略：如果历史接口超时，获取实时汇率并构造一个填充数据的 DataFrame
-            print("      ⚠️ 历史汇率接口超时，使用实时汇率填充...")
-            spot = ak.fx_spot_quote(code="USD/CNY")
-            current_rate = float(spot["bid_price"])
+        except Exception as e:
+            # 降级策略：使用固定汇率
+            print(f"      ⚠️ 汇率接口失败，使用固定汇率 7.0")
+            current_rate = 7.0
             dates = [date.today() - timedelta(days=i) for i in range(60)]
             df_fx_raw = pl.DataFrame(
                 {"日期": dates, "中行汇买价": [current_rate] * 60}
@@ -113,8 +112,8 @@ def fetch_and_store_data():
                     pl.col("bdi_index").forward_fill(),
                 ]
             )
-            # 只取最近 30 天的数据入库
-            .filter(pl.col("record_date") >= (date.today() - timedelta(days=30)))
+            # 只取最近 365 天的数据入库
+            .filter(pl.col("record_date") >= (date.today() - timedelta(days=365)))
         )
 
         # E. 计算估算进口成本
